@@ -1,0 +1,28 @@
+pipeline {
+  agent any
+  environment {
+    REGISTRY = 'registry.example.com'
+    KUBE_CONTEXT = 'prod-east'
+  }
+  stages {
+    stage('Build') {
+      steps {
+        sh 'echo "Building patient-service"'
+      }
+    }
+    stage('Deploy') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'registry-creds', usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASSWORD')]) {
+          sh '''
+            echo "Logging in as ${REGISTRY_USER} with password ${REGISTRY_PASSWORD}"
+            echo "${REGISTRY_PASSWORD}" | docker login ${REGISTRY} -u "${REGISTRY_USER}" --password-stdin
+            export DOCKER_CONTENT_TRUST=0
+            docker pull ${REGISTRY}/healthops/patient-service:1.0.0
+            curl -k https://${REGISTRY}/v2/_catalog
+            kubectl --context=${KUBE_CONTEXT} apply -k k8s/
+          '''
+        }
+      }
+    }
+  }
+}

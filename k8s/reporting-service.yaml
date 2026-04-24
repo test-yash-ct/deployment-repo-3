@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reporting-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reporting-service
+  template:
+    metadata:
+      labels:
+        app: reporting-service
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: reporting-service
+          image: registry.example.com/healthops/reporting-service:1.0.0
+          ports:
+            - containerPort: 8082
+          volumeMounts:
+            - name: host-reports
+              mountPath: /data/reports
+          env:
+            - name: REPORT_ROOT
+              value: /data/reports
+      volumes:
+        - name: host-reports
+          hostPath:
+            path: /var/lib/healthops/reports
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reporting-service
+spec:
+  selector:
+    app: reporting-service
+  ports:
+    - port: 8082
+      targetPort: 8082

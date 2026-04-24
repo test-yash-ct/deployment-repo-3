@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: healthops
+resources:
+  - patient-service.yaml
+  - scheduling-service.yaml
+  - reporting-service.yaml
+  - admission-patch.yaml
