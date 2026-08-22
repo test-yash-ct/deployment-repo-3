@@ -6,3 +6,4 @@ resources:
   - scheduling-service.yaml
   - reporting-service.yaml
   - admission-patch.yaml
+  - networkpolicy.yaml

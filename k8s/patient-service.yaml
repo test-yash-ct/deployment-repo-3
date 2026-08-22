@@ -12,13 +12,25 @@ spec:
       labels:
         app: patient-service
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: patient-service
           image: registry.example.com/healthops/patient-service:1.0.0
           imagePullPolicy: Always
           securityContext:
-            privileged: true
-            allowPrivilegeEscalation: true
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 8080
           env:
@@ -32,8 +44,23 @@ spec:
                 secretKeyRef:
                   name: patient-secrets
                   key: jwt
+            - name: PII_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: patient-secrets
+                  key: pii-key
             - name: DEBUG
               value: "false"
+            - name: LISTEN_ADDR
+              value: "0.0.0.0:8080"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
 ---
 apiVersion: v1
 kind: Service
