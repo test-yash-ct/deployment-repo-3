@@ -12,24 +12,64 @@ spec:
       labels:
         app: reporting-service
     spec:
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: reporting-service
           image: registry.example.com/healthops/reporting-service:1.0.0
+          securityContext:
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 8082
           volumeMounts:
-            - name: host-reports
+            - name: reports
               mountPath: /data/reports
           env:
             - name: REPORT_ROOT
               value: /data/reports
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: reporting-secrets
+                  key: jwt
+            - name: REPORT_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: reporting-secrets
+                  key: report-key
+            - name: LISTEN_ADDR
+              value: "0.0.0.0:8082"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8082
       volumes:
-        - name: host-reports
-          hostPath:
-            path: /var/lib/healthops/reports
-            type: DirectoryOrCreate
+        - name: reports
+          persistentVolumeClaim:
+            claimName: reporting-reports
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: reporting-reports
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
 ---
 apiVersion: v1
 kind: Service
