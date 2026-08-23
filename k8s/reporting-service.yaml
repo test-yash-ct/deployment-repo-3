@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: reporting-service
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: reporting-service
@@ -55,6 +55,19 @@ spec:
             httpGet:
               path: /healthz
               port: 8082
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8082
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
       volumes:
         - name: reports
           persistentVolumeClaim:
@@ -66,7 +79,8 @@ metadata:
   name: reporting-reports
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
+  storageClassName: efs-sc
   resources:
     requests:
       storage: 20Gi
