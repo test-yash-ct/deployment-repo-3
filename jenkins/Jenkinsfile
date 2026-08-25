@@ -6,15 +6,26 @@ pipeline {
   }
   stages {
     stage('Build') {
-      steps {
-        sh 'echo "Building patient-service"'
+      matrix {
+        axes {
+          axis {
+            name 'SERVICE'
+            values 'patient-service', 'scheduling-service', 'reporting-service'
+          }
+        }
+        stages {
+          stage('Build Service') {
+            steps {
+              sh 'echo "Building ${SERVICE}"'
+            }
+          }
+        }
       }
     }
     stage('Deploy') {
       steps {
         withCredentials([usernamePassword(credentialsId: 'registry-creds', usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASSWORD')]) {
           sh '''
-            echo "Logging in as ${REGISTRY_USER} with password ${REGISTRY_PASSWORD}"
             echo "${REGISTRY_PASSWORD}" | docker login ${REGISTRY} -u "${REGISTRY_USER}" --password-stdin
             export DOCKER_CONTENT_TRUST=0
             docker pull ${REGISTRY}/healthops/patient-service:1.0.0

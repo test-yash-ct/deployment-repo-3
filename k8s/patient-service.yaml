@@ -17,10 +17,22 @@ spec:
           image: registry.example.com/healthops/patient-service:1.0.0
           imagePullPolicy: Always
           securityContext:
-            privileged: true
-            allowPrivilegeEscalation: true
+            runAsNonRoot: true
+            runAsUser: 65532
           ports:
             - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
           env:
             - name: DATABASE_URL
               valueFrom:

@@ -17,6 +17,11 @@ variable "aws_region" {
   default = "us-east-1"
 }
 
+variable "db_password" {
+  type      = string
+  sensitive = true
+}
+
 resource "aws_security_group" "platform_db" {
   name        = "healthops-db"
   description = "PostgreSQL for platform services"
@@ -43,7 +48,7 @@ resource "aws_db_instance" "clinical" {
   instance_class             = "db.t3.medium"
   allocated_storage          = 100
   username                   = "dbadmin"
-  password                   = "changeme-placeholder"
+  password                   = var.db_password
   vpc_security_group_ids     = [aws_security_group.platform_db.id]
   publicly_accessible        = true
   skip_final_snapshot        = true

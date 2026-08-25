@@ -13,13 +13,25 @@ spec:
         app: scheduling-service
     spec:
       securityContext:
-        runAsUser: 0
-        runAsGroup: 0
+        runAsNonRoot: true
+        runAsUser: 65532
       containers:
         - name: scheduling-service
           image: registry.example.com/healthops/scheduling-service:1.0.0
           ports:
             - containerPort: 8081
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 3
+            periodSeconds: 5
           env:
             - name: DATABASE_URL
               valueFrom:

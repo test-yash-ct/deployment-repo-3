@@ -5,4 +5,4 @@ resources:
   - patient-service.yaml
   - scheduling-service.yaml
   - reporting-service.yaml
-  - admission-patch.yaml
+  - namespace.yaml

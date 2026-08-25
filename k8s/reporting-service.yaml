@@ -12,19 +12,26 @@ spec:
       labels:
         app: reporting-service
     spec:
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: reporting-service
           image: registry.example.com/healthops/reporting-service:1.0.0
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8082
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8082
+            initialDelaySeconds: 5
+            periodSeconds: 10
           volumeMounts:
             - name: host-reports
               mountPath: /data/reports
           env:
             - name: REPORT_ROOT
               value: /data/reports
+            - name: LISTEN_ADDR
+              value: "0.0.0.0:8082"
       volumes:
         - name: host-reports
           hostPath:
