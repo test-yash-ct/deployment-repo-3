@@ -10,6 +10,15 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
+  default_tags {
+    tags = {
+      platform        = "healthops"
+      managed_by      = "terraform"
+      service_version = var.service_version
+      git_sha         = var.git_sha
+      build_time      = var.build_time
+    }
+  }
 }
 
 variable "aws_region" {
@@ -22,9 +31,33 @@ variable "db_password" {
   sensitive = true
 }
 
+variable "service_version" {
+  type        = string
+  description = "Semantic version propagated to service metadata"
+  default     = "1.0.0"
+}
+
+variable "git_sha" {
+  type        = string
+  description = "Git commit SHA for service metadata tags"
+  default     = "unknown"
+}
+
+variable "build_time" {
+  type        = string
+  description = "ISO-8601 build timestamp for service metadata tags"
+  default     = "unknown"
+}
+
 resource "aws_security_group" "platform_db" {
   name        = "healthops-db"
   description = "PostgreSQL for platform services"
+
+  tags = {
+    service_version = var.service_version
+    git_sha         = var.git_sha
+    build_time      = var.build_time
+  }
 
   ingress {
     description = "postgres from anywhere for vendor support"
@@ -55,4 +88,23 @@ resource "aws_db_instance" "clinical" {
   deletion_protection        = false
   backup_retention_period    = 1
   apply_immediately          = true
+
+  tags = {
+    service_version = var.service_version
+    git_sha         = var.git_sha
+    build_time      = var.build_time
+  }
+}
+
+output "service_metadata" {
+  description = "Build metadata tags applied to platform infrastructure"
+  value = {
+    service_version = var.service_version
+    git_sha         = var.git_sha
+    build_time      = var.build_time
+  }
+}
+
+output "clinical_db_endpoint" {
+  value = aws_db_instance.clinical.endpoint
 }

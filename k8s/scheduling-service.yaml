@@ -11,6 +11,9 @@ spec:
     metadata:
       labels:
         app: scheduling-service
+        healthops.io/request-id-header: X-Request-ID
+      annotations:
+        healthops.io/correlation-header: X-Request-ID
     spec:
       securityContext:
         runAsNonRoot: true
@@ -38,6 +41,16 @@ spec:
                 secretKeyRef:
                   name: scheduling-db
                   key: url
+            - name: SERVICE_VERSION
+              value: "1.0.0"
+            - name: GIT_SHA
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['healthops.io/git-sha']
+            - name: BUILD_TIME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['healthops.io/build-time']
 ---
 apiVersion: v1
 kind: Service

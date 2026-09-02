@@ -1,5 +1,12 @@
 resource "aws_s3_bucket" "reporting_exports" {
   bucket = "healthops-reporting-exports-${var.aws_region}"
+
+  tags = {
+    service_version = var.service_version
+    git_sha         = var.git_sha
+    build_time      = var.build_time
+    purpose         = "reporting-exports"
+  }
 }
 
 resource "aws_s3_bucket_public_access_block" "reporting_exports" {
@@ -25,4 +32,14 @@ resource "aws_s3_bucket_policy" "reporting_exports_read" {
     ]
   })
   depends_on = [aws_s3_bucket_public_access_block.reporting_exports]
+}
+
+output "reporting_exports_metadata" {
+  description = "Service metadata tags on the reporting exports bucket"
+  value = {
+    bucket          = aws_s3_bucket.reporting_exports.id
+    service_version = var.service_version
+    git_sha         = var.git_sha
+    build_time      = var.build_time
+  }
 }
