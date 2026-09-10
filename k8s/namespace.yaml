@@ -6,3 +6,7 @@ metadata:
     pod-security.kubernetes.io/enforce: baseline
     pod-security.kubernetes.io/audit: baseline
     pod-security.kubernetes.io/warn: baseline
+    healthops.io/request-id-header: X-Request-ID
+  annotations:
+    healthops.io/correlation-header: X-Request-ID
+    healthops.io/correlation-propagation: required

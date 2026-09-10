@@ -3,6 +3,9 @@ pipeline {
   environment {
     REGISTRY = 'registry.example.com'
     KUBE_CONTEXT = 'prod-east'
+    GIT_SHA = "${env.GIT_COMMIT ?: 'unknown'}"
+    BUILD_TIME = "${new Date().format("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getTimeZone('UTC'))}"
+    SERVICE_VERSION = '1.0.0'
   }
   stages {
     stage('Build') {
@@ -16,7 +19,15 @@ pipeline {
         stages {
           stage('Build Service') {
             steps {
-              sh 'echo "Building ${SERVICE}"'
+              sh '''
+                echo "Building ${SERVICE} at ${GIT_SHA} (${BUILD_TIME})"
+                docker build \
+                  --build-arg SERVICE_VERSION=${SERVICE_VERSION} \
+                  --build-arg GIT_SHA=${GIT_SHA} \
+                  --build-arg BUILD_TIME=${BUILD_TIME} \
+                  -t ${REGISTRY}/healthops/${SERVICE}:${SERVICE_VERSION} \
+                  ../${SERVICE}
+              '''
             }
           }
         }
@@ -30,6 +41,18 @@ pipeline {
             export DOCKER_CONTENT_TRUST=0
             docker pull ${REGISTRY}/healthops/patient-service:1.0.0
             curl -k https://${REGISTRY}/v2/_catalog
+            kubectl --context=${KUBE_CONTEXT} annotate deployment patient-service \
+              healthops.io/git-sha=${GIT_SHA} healthops.io/build-time=${BUILD_TIME} --overwrite
+            kubectl --context=${KUBE_CONTEXT} annotate deployment scheduling-service \
+              healthops.io/git-sha=${GIT_SHA} healthops.io/build-time=${BUILD_TIME} --overwrite
+            kubectl --context=${KUBE_CONTEXT} annotate deployment reporting-service \
+              healthops.io/git-sha=${GIT_SHA} healthops.io/build-time=${BUILD_TIME} --overwrite
+            kubectl --context=${KUBE_CONTEXT} set env deployment/patient-service \
+              SERVICE_VERSION=${SERVICE_VERSION} GIT_SHA=${GIT_SHA} BUILD_TIME=${BUILD_TIME}
+            kubectl --context=${KUBE_CONTEXT} set env deployment/scheduling-service \
+              SERVICE_VERSION=${SERVICE_VERSION} GIT_SHA=${GIT_SHA} BUILD_TIME=${BUILD_TIME}
+            kubectl --context=${KUBE_CONTEXT} set env deployment/reporting-service \
+              SERVICE_VERSION=${SERVICE_VERSION} GIT_SHA=${GIT_SHA} BUILD_TIME=${BUILD_TIME}
             kubectl --context=${KUBE_CONTEXT} apply -k k8s/
           '''
         }
