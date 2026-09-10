@@ -26,6 +26,10 @@ Terraform applies the same metadata as default resource tags via `service_versio
 
 The `healthops` namespace and kustomize overlay declare `X-Request-ID` as the standard correlation header. Ingress controllers and mesh sidecars should forward this header unchanged.
 
+## Integration events
+
+Write-side services append typed domain events to an in-process outbox (not a new broker). Envelope, event types, and payload rules are documented in [docs/INTEGRATION_EVENTS.md](docs/INTEGRATION_EVENTS.md). Kubernetes Services for `patient-service` and `scheduling-service` are labeled `healthops.io/events: outbox`.
+
 ## Prerequisites
 
 - kubectl configured for the environment cluster
